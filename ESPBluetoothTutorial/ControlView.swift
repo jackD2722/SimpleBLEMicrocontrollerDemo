@@ -10,7 +10,7 @@ import SwiftUI
 struct ControlView: View {
     @ObservedObject var bleManager = BLEManager.shared
     @Binding var showControlView: Bool
-    @State private var value: Double = 50
+    @State private var value: Double = 90
 
     var body: some View {
         VStack(spacing: 20) {
@@ -33,12 +33,12 @@ struct ControlView: View {
             Text(bleManager.isConnected ? "✅ Connected" : "❌ Not Connected")
                 .foregroundColor(bleManager.isConnected ? .green : .red)
 
-            Slider(value: $value, in: 1...100, step: 1) {
+            Slider(value: $value, in: 1...180, step: 1) {
                 Text("Value")
             } minimumValueLabel: {
                 Text("1")
             } maximumValueLabel: {
-                Text("100")
+                Text("180")
             }
             .padding(.horizontal)
             .onChange(of: value) {
