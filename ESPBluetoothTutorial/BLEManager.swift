@@ -1,10 +1,3 @@
-//
-//  BLEManager.swift
-//  ESPBluetoothTutorial
-//
-//  Created by Jackson Dugan on 6/26/25.
-//
-
 import CoreBluetooth
 
 class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeripheralDelegate {
@@ -15,10 +8,12 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
 
     private var centralManager: CBCentralManager!
     private var connectedPeripheral: CBPeripheral?
-    private var controlCharacteristic: CBCharacteristic?
+    private var steeringCharacteristic: CBCharacteristic?
+    private var throttleCharacteristic: CBCharacteristic?
     
-    let serviceUUID = CBUUID(string: "12345678-1234-5678-1234-56789abcdef0") // Update with actual
-    let characteristicUUID = CBUUID(string: "abcd1234-5678-1234-5678-abcdef012345") // Update with actual
+    let serviceUUID = CBUUID(string: "12345678-1234-5678-1234-56789abcdef0")
+    let steeringCharacteristicUUID = CBUUID(string: "abcd1234-5678-1234-5678-abcdef012346")
+    let throttleCharacteristicUUID = CBUUID(string: "abcd1234-5678-1234-5678-abcdef012345")
 
     override init() {
         super.init()
@@ -46,21 +41,36 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
         }
         isConnected = false
         connectedPeripheral = nil
-        controlCharacteristic = nil
+        steeringCharacteristic = nil
+        throttleCharacteristic = nil
         print("🔌 Disconnected")
     }
 
-    func sendValue(_ value: Int) {
+    func sendSteeringValue(_ value: Int) {
         guard let peripheral = connectedPeripheral,
-              let characteristic = controlCharacteristic else {
-            print("❌ Not ready to send data")
+              let characteristic = steeringCharacteristic else {
+            print("❌ Not ready to send steering data")
             return
         }
 
         let command = "\(value)"
         if let data = command.data(using: .utf8) {
             peripheral.writeValue(data, for: characteristic, type: .withResponse)
-            print("📤 Sent: \(command)")
+            print("📤 Sent steering: \(command)")
+        }
+    }
+
+    func sendThrottleValue(_ value: Int) {
+        guard let peripheral = connectedPeripheral,
+              let characteristic = throttleCharacteristic else {
+            print("❌ Not ready to send throttle data")
+            return
+        }
+
+        let command = "\(value)"
+        if let data = command.data(using: .utf8) {
+            peripheral.writeValue(data, for: characteristic, type: .withResponse)
+            print("📤 Sent throttle: \(command)")
         }
     }
 
@@ -104,7 +114,7 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
     func peripheral(_ peripheral: CBPeripheral, didDiscoverServices error: Error?) {
         guard let services = peripheral.services else { return }
         for service in services where service.uuid == serviceUUID {
-            peripheral.discoverCharacteristics([characteristicUUID], for: service)
+            peripheral.discoverCharacteristics([steeringCharacteristicUUID, throttleCharacteristicUUID], for: service)
         }
     }
 
@@ -112,9 +122,14 @@ class BLEManager: NSObject, ObservableObject, CBCentralManagerDelegate, CBPeriph
                     didDiscoverCharacteristicsFor service: CBService,
                     error: Error?) {
         guard let characteristics = service.characteristics else { return }
-        for characteristic in characteristics where characteristic.uuid == characteristicUUID {
-            controlCharacteristic = characteristic
-            print("✅ Found characteristic")
+        for characteristic in characteristics {
+            if characteristic.uuid == steeringCharacteristicUUID {
+                steeringCharacteristic = characteristic
+                print("✅ Found steering characteristic")
+            } else if characteristic.uuid == throttleCharacteristicUUID {
+                throttleCharacteristic = characteristic
+                print("✅ Found throttle characteristic")
+            }
         }
     }
     

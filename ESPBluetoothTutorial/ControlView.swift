@@ -1,16 +1,10 @@
-//
-//  ControlView.swift
-//  ESPBluetoothTutorial
-//
-//  Created by Jackson Dugan on 6/26/25.
-//
-
 import SwiftUI
 
 struct ControlView: View {
     @ObservedObject var bleManager = BLEManager.shared
     @Binding var showControlView: Bool
-    @State private var value: Double = 90
+    @State private var steeringValue: Double = 90 // Default steering value
+    @State private var throttleValue: Double = 90 // Default throttle value
 
     var body: some View {
         VStack(spacing: 20) {
@@ -26,28 +20,46 @@ struct ControlView: View {
                 Spacer()
             }
 
-            Text("BLE Slider Demo")
+            Text("BLE Dual Servo Demo")
                 .font(.title)
                 .bold()
 
             Text(bleManager.isConnected ? "✅ Connected" : "❌ Not Connected")
                 .foregroundColor(bleManager.isConnected ? .green : .red)
 
-            Slider(value: $value, in: 1...180, step: 1) {
-                Text("Value")
+            // Steering Slider
+            Text("Steering")
+                .font(.headline)
+            Slider(value: $steeringValue, in: 50...130, step: 1) {
+                Text("Steering")
             } minimumValueLabel: {
-                Text("1")
+                Text("50")
+            } maximumValueLabel: {
+                Text("130")
+            }
+            .padding(.horizontal)
+            .onChange(of: steeringValue) {
+                bleManager.sendSteeringValue(Int(steeringValue))
+            }
+            Text("Steering Value: \(Int(steeringValue))")
+                .font(.subheadline)
+
+            // Throttle Slider
+            Text("Throttle")
+                .font(.headline)
+            Slider(value: $throttleValue, in: 0...180, step: 1) {
+                Text("Throttle")
+            } minimumValueLabel: {
+                Text("0")
             } maximumValueLabel: {
                 Text("180")
             }
             .padding(.horizontal)
-            .onChange(of: value) {
-                bleManager.sendValue(Int(value))
+            .onChange(of: throttleValue) {
+                bleManager.sendThrottleValue(Int(throttleValue))
             }
-
-
-            Text("Value: \(Int(value))")
-                .font(.headline)
+            Text("Throttle Value: \(Int(throttleValue))")
+                .font(.subheadline)
         }
         .padding()
     }
